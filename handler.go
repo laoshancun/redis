@@ -100,8 +100,8 @@ func (redis *Redis) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.M
 	}
 
 	// Only on NXDOMAIN we will fallthrough.
-	if len(answers) == 0 && h.Fall.Through(qname) {
-		return plugin.NextOrFailure(h.Name(), h.Next, ctx, w, r)
+	if len(answers) == 0 && redis.Fall.Through(qname) {
+		return plugin.NextOrFailure(redis.Name(), redis.Next, ctx, w, r)
 	}
 
 	m := new(dns.Msg)
