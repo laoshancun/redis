@@ -7,7 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/coredns/coredns/plugin"
+	"github.com/coredns/coredns/plugin"	
+	"github.com/coredns/coredns/plugin/pkg/fall"
 
 	redisCon "github.com/gomodule/redigo/redis"
 )
@@ -24,6 +25,7 @@ type Redis struct {
 	Ttl            uint32
 	Zones          []string
 	LastZoneUpdate time.Time
+	Fall fall.F
 }
 
 func (redis *Redis) LoadZones() {

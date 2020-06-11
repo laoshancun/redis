@@ -30,19 +30,21 @@ func setup(c *caddy.Controller) error {
 }
 
 func redisParse(c *caddy.Controller) (*Redis, error) {
-	redis := Redis {
-		keyPrefix:"",
-		keySuffix:"",
-		Ttl:300,
+	redis := Redis{
+		keyPrefix: "",
+		keySuffix: "",
+		Ttl:       300,
 	}
 	var (
-		err            error
+		err error
 	)
 
 	for c.Next() {
 		if c.NextBlock() {
 			for {
 				switch c.Val() {
+				case "fallthrough":
+					redis.Fall.SetZonesFromArgs(c.RemainingArgs())
 				case "address":
 					if !c.NextArg() {
 						return &Redis{}, c.ArgErr()
@@ -77,7 +79,7 @@ func redisParse(c *caddy.Controller) (*Redis, error) {
 					}
 					redis.readTimeout, err = strconv.Atoi(c.Val())
 					if err != nil {
-						redis.readTimeout = 0;
+						redis.readTimeout = 0
 					}
 				case "ttl":
 					if !c.NextArg() {

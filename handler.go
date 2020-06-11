@@ -99,6 +99,11 @@ func (redis *Redis) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.M
 		return redis.errorResponse(state, zone, dns.RcodeNotImplemented, nil)
 	}
 
+	// Only on NXDOMAIN we will fallthrough.
+	if len(answers) == 0 && h.Fall.Through(qname) {
+		return plugin.NextOrFailure(h.Name(), h.Next, ctx, w, r)
+	}
+
 	m := new(dns.Msg)
 	m.SetReply(r)
 	m.Authoritative, m.RecursionAvailable, m.Compress = true, false, true
