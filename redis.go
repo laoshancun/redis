@@ -418,8 +418,8 @@ func (redis *Redis) Connect() {
 				opts = append(opts, redisCon.DialConnectTimeout(time.Duration(redis.connectTimeout)*time.Millisecond))
 			}
 			if redis.database != 0 {
-				opts = append(opts, redisCon.DialDatabase(redis.database)
-			}			
+				opts = append(opts, redisCon.DialDatabase(redis.database))
+			}
 			if redis.readTimeout != 0 {
 				opts = append(opts, redisCon.DialReadTimeout(time.Duration(redis.readTimeout)*time.Millisecond))
 			}

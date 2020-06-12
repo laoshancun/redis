@@ -14,21 +14,25 @@ Address will default to local redis server (localhost:6379)
 redis {
     address ADDR
     password PWD
+    database 0
     prefix PREFIX
     suffix SUFFIX
     connect_timeout TIMEOUT
     read_timeout TIMEOUT
     ttl TTL
+    fallthrough
 }
 ~~~
 
 * `address` is redis server address to connect in the form of *host:port* or *ip:port*.
 * `password` is redis server *auth* key
+* `database` is redis server database
 * `connect_timeout` time in ms to wait for redis server to connect
 * `read_timeout` time in ms to wait for redis server to respond
 * `ttl` default ttl for dns records, 300 if not provided
 * `prefix` add PREFIX to all redis keys
 * `suffix` add SUFFIX to all redis keys
+* `fallthrough` just like official
 
 ## examples
 
