@@ -65,6 +65,14 @@ func redisParse(c *caddy.Controller) (*Redis, error) {
 						return &Redis{}, c.ArgErr()
 					}
 					redis.keySuffix = c.Val()
+				case "database":
+					if !c.NextArg() {
+						return &Redis{}, c.ArgErr()
+					}
+					redis.database, err = strconv.Atoi(c.Val())
+					if err != nil {
+						redis.database = 0
+					}
 				case "connect_timeout":
 					if !c.NextArg() {
 						return &Redis{}, c.ArgErr()

@@ -3,11 +3,12 @@ package redis
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/miekg/dns"
 	"strings"
 	"time"
 
-	"github.com/coredns/coredns/plugin"	
+	"github.com/miekg/dns"
+
+	"github.com/coredns/coredns/plugin"
 	"github.com/coredns/coredns/plugin/pkg/fall"
 
 	redisCon "github.com/gomodule/redigo/redis"
@@ -20,18 +21,19 @@ type Redis struct {
 	redisPassword  string
 	connectTimeout int
 	readTimeout    int
+	database       int
 	keyPrefix      string
 	keySuffix      string
 	Ttl            uint32
 	Zones          []string
 	LastZoneUpdate time.Time
-	Fall fall.F
+	Fall           fall.F
 }
 
 func (redis *Redis) LoadZones() {
 	var (
 		reply interface{}
-		err error
+		err   error
 		zones []string
 	)
 
@@ -42,7 +44,7 @@ func (redis *Redis) LoadZones() {
 	}
 	defer conn.Close()
 
-	reply, err = conn.Do("KEYS", redis.keyPrefix + "*" + redis.keySuffix)
+	reply, err = conn.Do("KEYS", redis.keyPrefix+"*"+redis.keySuffix)
 	if err != nil {
 		return
 	}
@@ -102,7 +104,7 @@ func (redis *Redis) TXT(name string, z *Zone, record *Record) (answers, extras [
 		if len(txt.Text) == 0 {
 			continue
 		}
-		r:= new(dns.TXT)
+		r := new(dns.TXT)
 		r.Hdr = dns.RR_Header{Name: dns.Fqdn(name), Rrtype: dns.TypeTXT,
 			Class: dns.ClassINET, Ttl: redis.minTtl(txt.Ttl)}
 		r.Txt = split255(txt.Text)
@@ -191,7 +193,7 @@ func (redis *Redis) CAA(name string, z *Zone, record *Record) (answers, extras [
 		return
 	}
 	for _, caa := range record.CAA {
-		if caa.Value == "" || caa.Tag == ""{
+		if caa.Value == "" || caa.Tag == "" {
 			continue
 		}
 		r := new(dns.CAA)
@@ -213,7 +215,7 @@ func (redis *Redis) AXFR(z *Zone) (records []dns.RR) {
 	// Allocate slices for rr Records
 	records = append(records, soa...)
 	for key := range z.Locations {
-		if key == "@"  {
+		if key == "@" {
 			location := redis.findLocation(z.Name, z)
 			record := redis.get(location, z)
 			soa, _ = redis.SOA(z.Name, z, record)
@@ -258,12 +260,12 @@ func (redis *Redis) AXFR(z *Zone) (records []dns.RR) {
 	records = append(records, soa...)
 
 	fmt.Println(records)
- 	return
+	return
 }
 
 func (redis *Redis) hosts(name string, z *Zone) []dns.RR {
 	var (
-		record *Record
+		record  *Record
 		answers []dns.RR
 	)
 	location := redis.findLocation(name, z)
@@ -297,12 +299,12 @@ func (redis *Redis) minTtl(ttl uint32) uint32 {
 	if redis.Ttl < ttl {
 		return redis.Ttl
 	}
-	return  ttl
+	return ttl
 }
 
 func (redis *Redis) findLocation(query string, z *Zone) string {
 	var (
-		ok bool
+		ok                                 bool
 		closestEncloser, sourceOfSynthesis string
 	)
 
@@ -311,7 +313,7 @@ func (redis *Redis) findLocation(query string, z *Zone) string {
 		return query
 	}
 
-	query = strings.TrimSuffix(query, "." + z.Name)
+	query = strings.TrimSuffix(query, "."+z.Name)
 
 	if _, ok = z.Locations[query]; ok {
 		return query
@@ -336,9 +338,9 @@ func (redis *Redis) findLocation(query string, z *Zone) string {
 
 func (redis *Redis) get(key string, z *Zone) *Record {
 	var (
-		err error
+		err   error
 		reply interface{}
-		val string
+		val   string
 	)
 	conn := redis.Pool.Get()
 	if conn == nil {
@@ -354,7 +356,7 @@ func (redis *Redis) get(key string, z *Zone) *Record {
 		label = key
 	}
 
-	reply, err = conn.Do("HGET", redis.keyPrefix + z.Name + redis.keySuffix, label)
+	reply, err = conn.Do("HGET", redis.keyPrefix+z.Name+redis.keySuffix, label)
 	if err != nil {
 		return nil
 	}
@@ -390,8 +392,8 @@ func splitQuery(query string) (string, string, bool) {
 		return "", "", false
 	}
 	var (
-		splits []string
-		closestEncloser string
+		splits            []string
+		closestEncloser   string
 		sourceOfSynthesis string
 	)
 	splits = strings.SplitAfterN(query, ".", 2)
@@ -407,7 +409,7 @@ func splitQuery(query string) (string, string, bool) {
 
 func (redis *Redis) Connect() {
 	redis.Pool = &redisCon.Pool{
-		Dial: func () (redisCon.Conn, error) {
+		Dial: func() (redisCon.Conn, error) {
 			opts := []redisCon.DialOption{}
 			if redis.redisPassword != "" {
 				opts = append(opts, redisCon.DialPassword(redis.redisPassword))
@@ -415,6 +417,9 @@ func (redis *Redis) Connect() {
 			if redis.connectTimeout != 0 {
 				opts = append(opts, redisCon.DialConnectTimeout(time.Duration(redis.connectTimeout)*time.Millisecond))
 			}
+			if redis.database != 0 {
+				opts = append(opts, redisCon.DialDatabase(redis.database)
+			}			
 			if redis.readTimeout != 0 {
 				opts = append(opts, redisCon.DialReadTimeout(time.Duration(redis.readTimeout)*time.Millisecond))
 			}
@@ -434,15 +439,15 @@ func (redis *Redis) save(zone string, subdomain string, value string) error {
 	}
 	defer conn.Close()
 
-	_, err = conn.Do("HSET", redis.keyPrefix + zone + redis.keySuffix, subdomain, value)
+	_, err = conn.Do("HSET", redis.keyPrefix+zone+redis.keySuffix, subdomain, value)
 	return err
 }
 
 func (redis *Redis) load(zone string) *Zone {
 	var (
 		reply interface{}
-		err error
-		vals []string
+		err   error
+		vals  []string
 	)
 
 	conn := redis.Pool.Get()
@@ -452,7 +457,7 @@ func (redis *Redis) load(zone string) *Zone {
 	}
 	defer conn.Close()
 
-	reply, err = conn.Do("HKEYS", redis.keyPrefix + zone + redis.keySuffix)
+	reply, err = conn.Do("HKEYS", redis.keyPrefix+zone+redis.keySuffix)
 	if err != nil {
 		return nil
 	}
@@ -491,8 +496,8 @@ func split255(s string) []string {
 }
 
 const (
-	defaultTtl = 360
-	hostmaster = "hostmaster"
-	zoneUpdateTime = 10*time.Minute
+	defaultTtl     = 360
+	hostmaster     = "hostmaster"
+	zoneUpdateTime = 10 * time.Minute
 	transferLength = 1000
 )
